@@ -10,6 +10,7 @@ from PIL import Image
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.utils import ImageReader
+from reportlab.lib.colors import HexColor
 
 # ==================================================
 # CONFIG
@@ -22,30 +23,22 @@ st.set_page_config(
 )
 
 # ==================================================
-# ESTILOS
+# ESTILO
 # ==================================================
 
 st.markdown("""
 <style>
 
 .stButton > button {
-    background-color: #d71920;
-    color: white;
-    border-radius: 8px;
-    border: none;
-    font-weight: bold;
+    background-color:#d71920;
+    color:white;
+    border-radius:8px;
+    border:none;
+    font-weight:bold;
 }
 
-.stButton > button:hover {
-    background-color: #b31218;
-    color: white;
-}
-
-.card {
-    border-radius: 12px;
-    background-color: white;
-    padding: 10px;
-    box-shadow: 0px 2px 10px rgba(0,0,0,0.15);
+h1 {
+    color:#222222;
 }
 
 </style>
@@ -56,13 +49,12 @@ st.markdown("""
 # ==================================================
 
 if os.path.exists("logo_atika.png"):
-
     st.image(
         "logo_atika.png",
-        width=300
+        width=320
     )
 
-st.title("Generador de Catálogos")
+st.title("Catálogos Comerciales")
 
 st.write(
     "Seleccione uno o más productos para generar fichas PDF."
@@ -79,17 +71,25 @@ productos = [
         "Nombre": "Wall Panel 16200 Walnut",
         "Marca": "ATIKA",
         "Categoria": "Revestimiento Decorativo",
-        "Descripcion": "Panel WPC decorativo para muros y cielos.",
+        "Descripcion": "Panel WPC decorativo para muros y cielos con apariencia tipo madera natural.",
+        "Material": "WPC",
+        "Color": "Walnut",
+        "Formato": "2900 x 160 mm",
+        "Uso": "Muros y cielos",
         "Imagen": "https://atika.vtexassets.com/arquivos/ids/169616-800-800"
     },
 
     {
         "SKU": "PORC-001",
-        "Nombre": "Porcelanato Eras Ivory Mate 60x120",
+        "Nombre": "Porcelanato Eras Ivory Mate",
         "Marca": "ATIKA",
         "Categoria": "Porcelanato",
-        "Descripcion": "Porcelanato rectificado acabado mate.",
-        "Imagen": "https://picsum.photos/800/800?1"
+        "Descripcion": "Porcelanato rectificado acabado mate para uso residencial y comercial.",
+        "Material": "Porcelanato",
+        "Color": "Ivory",
+        "Formato": "60 x 120 cm",
+        "Uso": "Piso y muro",
+        "Imagen": "https://picsum.photos/900/900?1"
     },
 
     {
@@ -97,8 +97,12 @@ productos = [
         "Nombre": "Piso SPC Aston Oak",
         "Marca": "ATIKA",
         "Categoria": "SPC",
-        "Descripcion": "Piso SPC resistente al agua.",
-        "Imagen": "https://picsum.photos/800/800?2"
+        "Descripcion": "Piso SPC resistente al agua ideal para espacios interiores.",
+        "Material": "SPC",
+        "Color": "Oak",
+        "Formato": "1220 x 180 mm",
+        "Uso": "Interior",
+        "Imagen": "https://picsum.photos/900/900?2"
     },
 
     {
@@ -106,8 +110,12 @@ productos = [
         "Nombre": "Grifería Negra Mate",
         "Marca": "ATIKA",
         "Categoria": "Grifería",
-        "Descripcion": "Grifería premium color negro mate.",
-        "Imagen": "https://picsum.photos/800/800?3"
+        "Descripcion": "Grifería premium con acabado negro mate de diseño contemporáneo.",
+        "Material": "Latón",
+        "Color": "Negro",
+        "Formato": "-",
+        "Uso": "Baño",
+        "Imagen": "https://picsum.photos/900/900?3"
     }
 
 ]
@@ -115,7 +123,7 @@ productos = [
 df = pd.DataFrame(productos)
 
 # ==================================================
-# PDF
+# PDF PREMIUM
 # ==================================================
 
 def crear_pdf(producto):
@@ -129,25 +137,65 @@ def crear_pdf(producto):
 
     ancho, alto = A4
 
-    # Logo
+    ROJO = HexColor("#D71920")
+    GRIS = HexColor("#777777")
+    FONDO = HexColor("#F4F4F4")
+
+    # -------------------------
+    # FONDO
+    # -------------------------
+
+    c.setFillColorRGB(1, 1, 1)
+
+    c.rect(
+        0,
+        0,
+        ancho,
+        alto,
+        fill=1,
+        stroke=0
+    )
+
+    # -------------------------
+    # FRANJA ROJA
+    # -------------------------
+
+    c.setFillColor(ROJO)
+
+    c.rect(
+        0,
+        alto - 10,
+        ancho,
+        10,
+        fill=1,
+        stroke=0
+    )
+
+    # -------------------------
+    # LOGO
+    # -------------------------
 
     if os.path.exists("logo_atika.png"):
 
         c.drawImage(
             "logo_atika.png",
             40,
-            alto - 100,
+            alto - 95,
             width=180,
-            height=60,
+            height=55,
             preserveAspectRatio=True,
             mask='auto'
         )
 
-    # Nombre producto
+    # -------------------------
+    # TITULO
+    # -------------------------
+
+    c.setFillColor(HexColor("#222222"))
 
     c.setFont(
         "Helvetica-Bold",
-        18
+        22
     )
 
     c.drawString(
@@ -156,32 +204,22 @@ def crear_pdf(producto):
         producto["Nombre"]
     )
 
-    # Datos
-
     c.setFont(
         "Helvetica",
-        11
+        12
     )
+
+    c.setFillColor(GRIS)
 
     c.drawString(
         40,
-        alto - 160,
-        f"SKU: {producto['SKU']}"
+        alto - 150,
+        producto["Categoria"]
     )
 
-    c.drawString(
-        40,
-        alto - 180,
-        f"Marca: {producto['Marca']}"
-    )
-
-    c.drawString(
-        40,
-        alto - 200,
-        f"Categoría: {producto['Categoria']}"
-    )
-
-    # Imagen
+    # -------------------------
+    # FOTO PRINCIPAL
+    # -------------------------
 
     try:
 
@@ -197,8 +235,8 @@ def crear_pdf(producto):
         c.drawImage(
             ImageReader(img),
             40,
-            250,
-            width=500,
+            300,
+            width=520,
             height=300
         )
 
@@ -206,20 +244,24 @@ def crear_pdf(producto):
 
         c.drawString(
             40,
-            500,
-            "No fue posible cargar la imagen"
+            450,
+            "Imagen no disponible"
         )
 
-    # Descripción
+    # -------------------------
+    # DESCRIPCION
+    # -------------------------
+
+    c.setFillColor(HexColor("#222222"))
 
     c.setFont(
         "Helvetica-Bold",
-        12
+        13
     )
 
     c.drawString(
         40,
-        220,
+        270,
         "DESCRIPCIÓN"
     )
 
@@ -230,8 +272,86 @@ def crear_pdf(producto):
 
     c.drawString(
         40,
-        200,
+        250,
         producto["Descripcion"]
+    )
+
+    # -------------------------
+    # ESPECIFICACIONES
+    # -------------------------
+
+    c.setFillColor(FONDO)
+
+    c.roundRect(
+        40,
+        70,
+        520,
+        140,
+        8,
+        fill=1,
+        stroke=0
+    )
+
+    c.setFillColor(HexColor("#222222"))
+
+    c.setFont(
+        "Helvetica-Bold",
+        13
+    )
+
+    c.drawString(
+        55,
+        185,
+        "ESPECIFICACIONES"
+    )
+
+    datos = [
+
+        ("SKU", producto["SKU"]),
+        ("Marca", producto["Marca"]),
+        ("Material", producto["Material"]),
+        ("Color", producto["Color"]),
+        ("Formato", producto["Formato"]),
+        ("Uso", producto["Uso"])
+
+    ]
+
+    y = 160
+
+    c.setFont(
+        "Helvetica",
+        10
+    )
+
+    for nombre, valor in datos:
+
+        c.drawString(
+            60,
+            y,
+            f"{nombre}:"
+        )
+
+        c.drawString(
+            180,
+            y,
+            str(valor)
+        )
+
+        y -= 20
+
+    # -------------------------
+    # FOOTER
+    # -------------------------
+
+    c.setFillColor(ROJO)
+
+    c.rect(
+        0,
+        0,
+        ancho,
+        20,
+        fill=1,
+        stroke=0
     )
 
     c.save()
@@ -239,17 +359,13 @@ def crear_pdf(producto):
     return archivo_pdf
 
 # ==================================================
-# SELECTOR
+# SELECCION
 # ==================================================
 
 seleccionados = st.multiselect(
     "Seleccione productos",
     df["Nombre"]
 )
-
-# ==================================================
-# BOTON
-# ==================================================
 
 if st.button("Generar Catálogos PDF"):
 
@@ -261,7 +377,7 @@ if st.button("Generar Catálogos PDF"):
 
     else:
 
-        generados = []
+        pdfs = []
 
         for nombre in seleccionados:
 
@@ -269,9 +385,13 @@ if st.button("Generar Catálogos PDF"):
                 df["Nombre"] == nombre
             ].iloc[0]
 
-            pdf = crear_pdf(producto)
+            archivo = crear_pdf(
+                producto
+            )
 
-            generados.append(pdf)
+            pdfs.append(
+                archivo
+            )
 
         zip_name = "Catalogos_ATIKA.zip"
 
@@ -280,7 +400,7 @@ if st.button("Generar Catálogos PDF"):
             "w"
         ) as z:
 
-            for pdf in generados:
+            for pdf in pdfs:
 
                 z.write(
                     pdf,
@@ -290,18 +410,14 @@ if st.button("Generar Catálogos PDF"):
         with open(
             zip_name,
             "rb"
-        ) as archivo_zip:
+        ) as f:
 
             st.download_button(
-                label="📥 Descargar ZIP",
-                data=archivo_zip,
+                "📥 Descargar ZIP",
+                data=f,
                 file_name=zip_name,
                 mime="application/zip"
             )
-
-        st.success(
-            f"Se generaron {len(generados)} PDF(s)."
-        )
 
 # ==================================================
 # GALERIA
@@ -309,7 +425,7 @@ if st.button("Generar Catálogos PDF"):
 
 st.divider()
 
-st.subheader("Productos disponibles")
+st.subheader("Productos Disponibles")
 
 cols = st.columns(4)
 
@@ -332,8 +448,4 @@ for i, (_, row) in enumerate(df.iterrows()):
 
         st.write(
             row["Descripcion"]
-        )
-
-        st.markdown(
-            f"**SKU:** {row['SKU']}"
         )
