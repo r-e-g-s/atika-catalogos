@@ -273,7 +273,7 @@ cols = st.columns(4)
 
 for i, (_, row) in enumerate(df.iterrows()):
 
-    with cols[i % 4\]:
+    with cols[i % 4]:
 
         st.image(
             row["Imagen"],
