@@ -17,8 +17,55 @@ from reportlab.lib.utils import ImageReader
 
 st.set_page_config(
     page_title="ATIKA Catálogos",
-    page_icon="📄",
+    page_icon="🏠",
     layout="wide"
+)
+
+# ==================================================
+# ESTILOS
+# ==================================================
+
+st.markdown("""
+<style>
+
+.stButton > button {
+    background-color: #d71920;
+    color: white;
+    border-radius: 8px;
+    border: none;
+    font-weight: bold;
+}
+
+.stButton > button:hover {
+    background-color: #b31218;
+    color: white;
+}
+
+.card {
+    border-radius: 12px;
+    background-color: white;
+    padding: 10px;
+    box-shadow: 0px 2px 10px rgba(0,0,0,0.15);
+}
+
+</style>
+""", unsafe_allow_html=True)
+
+# ==================================================
+# LOGO
+# ==================================================
+
+if os.path.exists("logo_atika.png"):
+
+    st.image(
+        "logo_atika.png",
+        width=300
+    )
+
+st.title("Generador de Catálogos")
+
+st.write(
+    "Seleccione uno o más productos para generar fichas PDF."
 )
 
 # ==================================================
@@ -73,27 +120,30 @@ df = pd.DataFrame(productos)
 
 def crear_pdf(producto):
 
-    nombre_pdf = f"{producto['SKU']}.pdf"
+    archivo_pdf = f"{producto['SKU']}.pdf"
 
     c = canvas.Canvas(
-        nombre_pdf,
+        archivo_pdf,
         pagesize=A4
     )
 
     ancho, alto = A4
 
-    # titulo
+    # Logo
 
-    c.setFont(
-        "Helvetica-Bold",
-        22
-    )
+    if os.path.exists("logo_atika.png"):
 
-    c.drawString(
-        40,
-        alto - 50,
-        "ATIKA"
-    )
+        c.drawImage(
+            "logo_atika.png",
+            40,
+            alto - 100,
+            width=180,
+            height=60,
+            preserveAspectRatio=True,
+            mask='auto'
+        )
+
+    # Nombre producto
 
     c.setFont(
         "Helvetica-Bold",
@@ -102,9 +152,11 @@ def crear_pdf(producto):
 
     c.drawString(
         40,
-        alto - 90,
+        alto - 130,
         producto["Nombre"]
     )
+
+    # Datos
 
     c.setFont(
         "Helvetica",
@@ -113,37 +165,37 @@ def crear_pdf(producto):
 
     c.drawString(
         40,
-        alto - 120,
+        alto - 160,
         f"SKU: {producto['SKU']}"
     )
 
     c.drawString(
         40,
-        alto - 140,
+        alto - 180,
         f"Marca: {producto['Marca']}"
     )
 
     c.drawString(
         40,
-        alto - 160,
-        f"Categoria: {producto['Categoria']}"
+        alto - 200,
+        f"Categoría: {producto['Categoria']}"
     )
+
+    # Imagen
 
     try:
 
-        respuesta = requests.get(
+        r = requests.get(
             producto["Imagen"],
             timeout=20
         )
 
-        imagen = Image.open(
-            BytesIO(
-                respuesta.content
-            )
+        img = Image.open(
+            BytesIO(r.content)
         )
 
         c.drawImage(
-            ImageReader(imagen),
+            ImageReader(img),
             40,
             250,
             width=500,
@@ -155,8 +207,10 @@ def crear_pdf(producto):
         c.drawString(
             40,
             500,
-            "Error cargando imagen"
+            "No fue posible cargar la imagen"
         )
+
+    # Descripción
 
     c.setFont(
         "Helvetica-Bold",
@@ -166,7 +220,7 @@ def crear_pdf(producto):
     c.drawString(
         40,
         220,
-        "DESCRIPCION"
+        "DESCRIPCIÓN"
     )
 
     c.setFont(
@@ -182,24 +236,14 @@ def crear_pdf(producto):
 
     c.save()
 
-    return nombre_pdf
+    return archivo_pdf
 
 # ==================================================
-# CABECERA
-# ==================================================
-
-st.title("ATIKA | Generador de Catálogos")
-
-st.write(
-    "Seleccione uno o más productos para generar PDFs."
-)
-
-# ==================================================
-# MULTISELECT
+# SELECTOR
 # ==================================================
 
 seleccionados = st.multiselect(
-    "Productos disponibles",
+    "Seleccione productos",
     df["Nombre"]
 )
 
@@ -207,7 +251,7 @@ seleccionados = st.multiselect(
 # BOTON
 # ==================================================
 
-if st.button("Generar PDFs"):
+if st.button("Generar Catálogos PDF"):
 
     if len(seleccionados) == 0:
 
@@ -219,10 +263,10 @@ if st.button("Generar PDFs"):
 
         generados = []
 
-        for producto_nombre in seleccionados:
+        for nombre in seleccionados:
 
             producto = df[
-                df["Nombre"] == producto_nombre
+                df["Nombre"] == nombre
             ].iloc[0]
 
             pdf = crear_pdf(producto)
@@ -246,11 +290,11 @@ if st.button("Generar PDFs"):
         with open(
             zip_name,
             "rb"
-        ) as f:
+        ) as archivo_zip:
 
             st.download_button(
-                "📥 Descargar ZIP",
-                f,
+                label="📥 Descargar ZIP",
+                data=archivo_zip,
                 file_name=zip_name,
                 mime="application/zip"
             )
@@ -260,14 +304,12 @@ if st.button("Generar PDFs"):
         )
 
 # ==================================================
-# GALERIA PRODUCTOS
+# GALERIA
 # ==================================================
 
 st.divider()
 
-st.subheader(
-    "Productos disponibles"
-)
+st.subheader("Productos disponibles")
 
 cols = st.columns(4)
 
@@ -281,7 +323,7 @@ for i, (_, row) in enumerate(df.iterrows()):
         )
 
         st.markdown(
-            f"**{row['Nombre']}**"
+            f"### {row['Nombre']}"
         )
 
         st.caption(
@@ -290,4 +332,8 @@ for i, (_, row) in enumerate(df.iterrows()):
 
         st.write(
             row["Descripcion"]
+        )
+
+        st.markdown(
+            f"**SKU:** {row['SKU']}"
         )
