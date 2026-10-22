@@ -468,20 +468,56 @@ def draw_header(c, p, kind, title=""):
     c.line(38, H-151, 106, H-151)
 
 
-def footer(c, sku, page=1):
-    draw_text(
-        c, "ATIKA.CL",
-        W-185, 28,
-        140, 13, True, GREY
-    )
 
+def footer(c, sku, page=1):
+
+    # Pie de página corporativo ATIKA
+    footer_path = BASE / "assets" / "footer_atika.png"
+
+    if footer_path.exists():
+        img = Image.open(footer_path).convert("RGBA")
+
+        iw, ih = img.size
+
+        # Tamaño proporcional
+        ancho_footer = 245
+        alto_footer = ancho_footer * ih / iw
+
+        c.drawImage(
+            ImageReader(img),
+            W - ancho_footer - 28,
+            16,
+            width=ancho_footer,
+            height=alto_footer,
+            preserveAspectRatio=True,
+            mask="auto"
+        )
+
+    else:
+        # Respaldo si no existe la imagen
+        draw_text(
+            c,
+            "ATIKA.CL",
+            W - 185,
+            28,
+            140,
+            13,
+            True,
+            GREY
+        )
+
+    # Identificador del producto
     draw_text(
         c,
         f"SKU: {sku} | Página {page}",
-        38, 29,
-        W-260, 8,
-        False, GREY
+        38,
+        29,
+        W - 320,
+        8,
+        False,
+        GREY
     )
+
 
 
 # ==================================================
