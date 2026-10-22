@@ -12,6 +12,7 @@ from reportlab.lib.utils import ImageReader
 from reportlab.pdfbase.pdfmetrics import stringWidth
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
+import unicodedata
 
 
 # ==================================================
@@ -131,13 +132,34 @@ CAMPOS = {
 # FUNCIONES DE PRODUCTOS
 # ==================================================
 
+
 def clean(v):
     if v is None:
         return ""
+
     s = str(v).strip()
-    return "" if s.lower() in (
+
+    if s.lower() in (
         "nan", "none", "null", "<na>", "nat", ""
-    ) else s
+    ):
+        return ""
+
+    # Normalizar caracteres Unicode
+    # Convierte n + tilde combinada en ñ
+    # También normaliza á, é, í, ó, ú
+    s = unicodedata.normalize("NFC", s)
+
+    # Eliminar caracteres de control invisibles
+    s = "".join(
+        caracter
+        for caracter in s
+        if unicodedata.category(caracter) not in (
+            "Cc", "Cf"
+        )
+    )
+
+    return s
+
 
 
 def categoria(p):
