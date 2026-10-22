@@ -27,19 +27,43 @@ DARK = HexColor("#202020")
 GREY = HexColor("#777777")
 LINE = HexColor("#AFAFAF")
 
+
+# ==================================================
+# FUENTES CON SOPORTE PARA Ñ, TILDES Y SÍMBOLOS
+# ==================================================
+
 FONT = "Helvetica"
 BOLD = "Helvetica-Bold"
 
-for name, path in [
-    ("Atika", "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"),
-    ("AtikaBold", "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"),
-]:
-    if Path(path).exists():
-        pdfmetrics.registerFont(TTFont(name, path))
-        if name == "Atika":
-            FONT = name
-        else:
-            BOLD = name
+fuentes = [
+    (
+        "DejaVuSans",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+    ),
+    (
+        "LiberationSans",
+        "/usr/share/fonts/truetype/liberation2/LiberationSans-Regular.ttf",
+        "/usr/share/fonts/truetype/liberation2/LiberationSans-Bold.ttf"
+    )
+]
+
+for nombre, regular, negrita in fuentes:
+    if Path(regular).exists() and Path(negrita).exists():
+
+        pdfmetrics.registerFont(
+            TTFont(nombre, regular)
+        )
+
+        pdfmetrics.registerFont(
+            TTFont(nombre + "Bold", negrita)
+        )
+
+        FONT = nombre
+        BOLD = nombre + "Bold"
+
+        break
+
 
 
 # ==================================================
