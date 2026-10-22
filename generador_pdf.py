@@ -1,86 +1,163 @@
-"""Fichas horizontales ATIKA: originales exactos para referencias; plantilla para resto."""
+"""Generador de fichas ATIKA 100 % dinámico: nunca reutiliza los PDF originales."""
 from io import BytesIO
 from pathlib import Path
-from xml.sax.saxutils import escape
-import re
+from PIL import Image
 from reportlab.pdfgen import canvas
 from reportlab.lib.colors import HexColor
 from reportlab.lib.utils import ImageReader
 from reportlab.pdfbase.pdfmetrics import stringWidth
-from PIL import Image
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+import re
 
-BASE=Path(__file__).resolve().parent
-REFERENCIAS={
- '30294DC0':'30294DC0-FT.pdf',
- '39467000':'39467000-FT.pdf',
- 'P3CR572AT':'P3CR572AT-FT.pdf',
- 'DOLOMITE WT 60X120/L':'DOLOMITE-WHITE-60X120-FT.pdf',
- 'MUZZANO CINZA 60X120':'MUZZANO-CINZA-60X120-FT.pdf',
+BASE = Path(__file__).resolve().parent
+W,H = 960,675  # Formato apaisado, relación similar a las referencias
+RED=HexColor('#D71920'); DARK=HexColor('#202020'); GREY=HexColor('#777777'); LINE=HexColor('#AFAFAF')
+FONT='Helvetica'; BOLD='Helvetica-Bold'
+for name, path in [('Atika','/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf'),('AtikaBold','/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf')]:
+    if Path(path).exists():
+        pdfmetrics.registerFont(TTFont(name,path))
+        if name=='Atika': FONT=name
+        else: BOLD=name
+
+# Las claves corresponden literalmente a los encabezados del Excel de ATIKA.
+CAMPOS = {
+ 'general': [('CÓDIGO','Número de artículo'),('SERIE','SERIE MKT'),('MARCA','Des MARCA'),('ORIGEN DE LA MARCA','Des ORIGEN_MARCA'),('MEDIDA','Des FORMATO_COMERCIAL'),('COLOR','Des COLOR'),('TERMINACIÓN','Des TERMINACION'),('MATERIAL','MATERIAL'),('USO','Des USO'),('ZONA DE APLICACIÓN','Des ZONA_APLICACION')],
+ 'porcelanatos': [('CÓDIGO','Número de artículo'),('SERIE','SERIE MKT'),('MARCA','Des MARCA'),('ORIGEN DE LA MARCA','Des ORIGEN_MARCA'),('MEDIDA','Des FORMATO_COMERCIAL'),('ESPESOR','ESPESOR'),('TERMINACIÓN','Des TERMINACION'),('USO','Des USO'),('ZONA DE APLICACIÓN','Des ZONA_APLICACION'),('GRÁFICAS DISTINTAS','NÚMERO DE GRÁFICAS POR CAJA'),('ABSORCIÓN DE AGUA','Porcentaje de Absorción'),('VARIACIÓN TONAL','Des VARIACION_TONAL'),('RECTIFICADO','Des RECTIFI'),('ANTIDESLIZANTE','Des ANTIDESLIZANTE')],
+ 'griferia': [('CÓDIGO','Número de artículo'),('SERIE','SERIE MKT'),('MARCA','Des MARCA'),('ORIGEN DE LA MARCA','Des ORIGEN_MARCA'),('TERMINACIÓN','Des TERMINACION'),('ZONA DE APLICACIÓN','Des ZONA_APLICACION'),('MATERIAL','MATERIAL'),('TIPO','Des TIPO'),('INCLUYE','INCLUYE'),('INSTALACIÓN','INSTALACIÓN')],
+ 'sanitarios': [('CÓDIGO','Número de artículo'),('MARCA','Des MARCA'),('ORIGEN DE LA MARCA','Des ORIGEN_MARCA'),('SERIE','SERIE MKT'),('TERMINACIÓN','Des TERMINACION'),('DESCARGA','DESCARGA'),('CONSUMO','CONSUMO DE AGUA'),('ASIENTO','ASIENTO'),('INCLUYE','INCLUYE'),('MATERIAL','MATERIAL'),('INSTALACIÓN','Des INSTALACION_SANIT')]
 }
-W,H=780,540
-ROJO=HexColor('#D71920'); GRIS=HexColor('#777777')
-CAMPOS=[('CÓDIGO','Número de artículo'),('SERIE','SERIE MKT'),('MARCA','Des MARCA'),('ORIGEN DE LA MARCA','Des ORIGEN_MARCA'),('MEDIDA','Des FORMATO_COMERCIAL'),('COLOR','Des COLOR'),('TERMINACIÓN','Des TERMINACION'),('ESPESOR','ESPESOR'),('USO','Des USO'),('ZONA DE APLICACIÓN','Des ZONA_APLICACION'),('VARIACIÓN TONAL','Des VARIACION_TONAL'),('RECTIFICADO','Des RECTIFI'),('MATERIAL','MATERIAL'),('ASIENTO','ASIENTO'),('DESCARGA','DESCARGA'),('CONSUMO DE AGUA','CONSUMO DE AGUA'),('INCLUYE','INCLUYE'),('ABSORCIÓN DE AGUA','Porcentaje de Absorción')]
 
-def limpio(x):
- s=str(x).strip() if x is not None else ''
- return '' if s.lower() in ('nan','none','null','-','y','no','si','0','0.0') else s
 
-def titulo_producto(p):
- a=limpio(p.get('NOMBRE ECOMMERCE'))
- return a if len(a)>5 else limpio(p.get('Descripción del artículo')) or str(p.get('Número de artículo',''))
+def clean(v):
+    if v is None: return ''
+    s=str(v).strip()
+    return '' if s.lower() in ('nan','none','null','<na>','nat','') else s
 
-def texto(c,s,x,y,maxw,size=11,bold=False,color=HexColor('#202020')):
- s=limpio(s); font='Helvetica-Bold' if bold else 'Helvetica'; c.setFont(font,size);c.setFillColor(color)
- while s and stringWidth(s,font,size)>maxw: s=s[:-2].rstrip()+'…'
- c.drawString(x,y,s)
+def categoria(p):
+    txt=' '.join(clean(p.get(k)) for k in ('Rubro','Familia Item','Descripción del artículo')).casefold()
+    if any(w in txt for w in ('porcelanato','cerámic','ceramic','revestimiento')): return 'porcelanatos'
+    if any(w in txt for w in ('grifer','grifo','monomando','mezcladora')): return 'griferia'
+    if any(w in txt for w in ('sanitario','inodoro','wc ','wc-','lavamanos')): return 'sanitarios'
+    return 'general'
 
-def logo(c):
- p=BASE/'assets'/'logo_atika.png'
- if p.exists():
-  try:
-   im=Image.open(p);c.drawImage(ImageReader(im),645,477,width=110,height=40,preserveAspectRatio=True,anchor='c',mask='auto');return
-  except Exception: pass
- texto(c,'ATIKA',652,488,105,25,True)
- c.setStrokeColor(ROJO);c.setLineWidth(3);c.line(645,482,755,482)
+def nombre(p):
+    return clean(p.get('NOMBRE ECOMMERCE')) or clean(p.get('Descripción del artículo')) or clean(p.get('Número de artículo'))
 
-def imagen(c,sku):
- # Fotos provistas por la empresa: assets/productos/SKU.png|jpg|jpeg.
- for ext in ('.png','.jpg','.jpeg','.webp'):
-  p=BASE/'assets'/'productos'/f'{sku}{ext}'
-  if p.exists():
-   try:
-    im=Image.open(p).convert('RGB'); iw,ih=im.size; scale=min(330/iw,265/ih)
-    c.drawImage(ImageReader(im),435+(330-iw*scale)/2,142+(265-ih*scale)/2,iw*scale,ih*scale);return True
-   except Exception: pass
- return False
+def safe_sku(s):
+    return re.sub(r'[^a-zA-Z0-9._-]+','_',str(s)).strip('._') or 'SIN_SKU'
+
+def draw_text(c,s,x,y,width,size=11,bold=False,color=DARK,max_lines=1):
+    s=clean(s)
+    if not s: return y
+    font=BOLD if bold else FONT
+    c.setFont(font,size); c.setFillColor(color)
+    words=s.split(); lines=[]; line=''
+    for word in words:
+        candidate=(line+' '+word).strip()
+        if stringWidth(candidate,font,size)<=width: line=candidate
+        else:
+            if line: lines.append(line)
+            line=word
+    if line: lines.append(line)
+    if len(lines)>max_lines:
+        lines=lines[:max_lines]
+        while lines[-1] and stringWidth(lines[-1]+'…',font,size)>width: lines[-1]=lines[-1][:-1]
+        lines[-1]+='…'
+    for j,t in enumerate(lines): c.drawString(x,y-j*(size+5),t)
+    return y-len(lines)*(size+5)
+
+def draw_logo(c):
+    path=BASE/'assets'/'logo_atika.png'
+    if path.exists():
+        try:
+            im=Image.open(path).convert('RGBA'); iw,ih=im.size; sc=min(160/iw,64/ih)
+            c.drawImage(ImageReader(im),W-45-iw*sc,H-86,iw*sc,ih*sc,mask='auto');return
+        except Exception: pass
+    draw_text(c,'ATIKA',W-183,H-65,140,29)
+    c.setStrokeColor(RED);c.setLineWidth(3);c.line(W-185,H-76,W-45,H-76)
+
+def asset_path(sku,subdir):
+    root=BASE/'assets'/subdir
+    for ext in ('.png','.jpg','.jpeg','.webp'):
+        f=root/(safe_sku(sku)+ext)
+        if f.exists(): return f
+    return None
+
+def fit_image(c,path,x,y,w,h):
+    im=Image.open(path).convert('RGB'); iw,ih=im.size
+    scale=min(w/iw,h/ih); a=iw*scale;b=ih*scale
+    c.drawImage(ImageReader(im),x+(w-a)/2,y+(h-b)/2,a,b)
+
+def placeholder(c,sku,x,y,w,h,category):
+    c.setFillColor(HexColor('#F1F1F1'));c.roundRect(x,y,w,h,6,fill=1,stroke=0)
+    c.setStrokeColor(HexColor('#D3D3D3'));c.setLineWidth(1)
+    c.line(x+24,y+24,x+w-24,y+h-24);c.line(x+24,y+h-24,x+w-24,y+24)
+    draw_text(c,'IMAGEN DEMOSTRATIVA',x+26,y+h/2+20,w-52,14,True,GREY)
+    draw_text(c,'Sin fotografía validada para este SKU',x+26,y+h/2-5,w-52,10,False,GREY,2)
+    draw_text(c,sku,x+26,y+26,w-52,10,True,GREY)
+
+def draw_table(c,fields,x,top,w,bottom=94):
+    yy=top; left=155
+    for label,value in fields:
+        if not value: continue
+        size=9.1
+        value_width=w-left-15
+        # Dos líneas para valores extensos, sin cortar otros campos
+        text_len=stringWidth(value,FONT,size)
+        rowh=26 if text_len<=value_width else 39
+        if yy-rowh<bottom: return False
+        draw_text(c,label,x+6,yy-15,left-10,8.5,True,max_lines=2)
+        draw_text(c,value,x+left,yy-15,value_width,size,max_lines=2)
+        c.setStrokeColor(LINE);c.setLineWidth(.45);c.line(x,yy-rowh,x+w,yy-rowh)
+        yy-=rowh
+    return True
+
+def draw_header(c,p,kind,title=''):
+    label={'porcelanatos':'PORCELANATOS & CERÁMICOS','griferia':'GRIFERÍA DE COCINA Y BAÑO','sanitarios':'SANITARIOS','general':clean(p.get('Familia Item')) or 'FICHA TÉCNICA'}[kind]
+    draw_text(c,label,38,H-52,590,10,True,GREY)
+    draw_logo(c)
+    draw_text(c,title or nombre(p),38,H-105,W-280,23,False,DARK,2)
+    c.setStrokeColor(RED);c.setLineWidth(4);c.line(38,H-151,106,H-151)
+
+def footer(c,sku,page=1):
+    draw_text(c,'ATIKA.CL',W-185,28,140,13,True,GREY)
+    draw_text(c,f'SKU: {sku}  |  Ficha generada automáticamente desde Excel  |  Página {page}',38,29,W-260,8,False,GREY)
 
 def crear_pdf(p):
- sku=str(p.get('Número de artículo','')).strip()
- ref=BASE/'referencias'/REFERENCIAS.get(sku,'')
- if sku in REFERENCIAS and ref.is_file(): return ref.read_bytes(),True
- out=BytesIO();c=canvas.Canvas(out,pagesize=(W,H),pageCompression=1)
- c.setFillColor(HexColor('#FFFFFF'));c.rect(0,0,W,H,fill=1,stroke=0)
- texto(c,limpio(p.get('Familia Item')) or limpio(p.get('Rubro')) or 'FICHA TÉCNICA',32,496,500,9,True,GRIS)
- logo(c)
- titulo=titulo_producto(p)
- texto(c,titulo,32,457,715,23,False)
- c.setStrokeColor(ROJO);c.setLineWidth(4);c.line(32,440,82,440)
- desc=limpio(p.get('DESCRIPCIÓN ECOMMERCE'))
- if len(desc)<6:desc=limpio(p.get('Descripción del artículo'))
- texto(c,desc,32,409,390,10,False,GRIS)
- filas=[(etiqueta,limpio(p.get(col))) for etiqueta,col in CAMPOS]
- filas=[(k,v) for k,v in filas if v]
- y=376
- for k,v in filas[:14]:
-  c.setStrokeColor(HexColor('#BBBBBB'));c.setLineWidth(.45);c.line(32,y-6,411,y-6)
-  texto(c,k,36,y,145,8,True)
-  texto(c,v,185,y,222,8)
-  y-=23
- if not imagen(c,sku):
-  c.setFillColor(HexColor('#F6F6F6'));c.roundRect(449,170,287,210,4,stroke=0,fill=1)
-  texto(c,'Fotografía pendiente de asociar al SKU',471,268,250,10,False,GRIS)
-  texto(c,sku,471,248,250,10,True,GRIS)
- c.setStrokeColor(HexColor('#EEEEEE'));c.line(32,38,747,38)
- texto(c,'ATIKA.CL',620,18,120,12,True,GRIS)
- texto(c,'Ficha generada desde base de especificaciones',32,20,410,8,False,GRIS)
- c.save();return out.getvalue(),False
+    sku=clean(p.get('Número de artículo'))
+    kind=categoria(p)
+    out=BytesIO(); c=canvas.Canvas(out,pagesize=(W,H),pageCompression=1)
+    draw_header(c,p,kind)
+    desc=clean(p.get('DESCRIPCIÓN ECOMMERCE')) or clean(p.get('DESCRIPCION LARGA ECOMMERCE')) or clean(p.get('Descripción del artículo'))
+    draw_text(c,desc,38,H-193,440,10.5,False,GREY,3)
+    fields=[(lab,clean(p.get(col))) for lab,col in CAMPOS[kind]]
+    fields=[(lab,val) for lab,val in fields if val]
+    # El catálogo genérico también admite propiedades adicionales presentes en el Excel.
+    draw_table(c,fields,38,H-255,440)
+    img=asset_path(sku,'productos')
+    if img:
+        try:fit_image(c,img,515,185,405,355)
+        except Exception:placeholder(c,sku,515,185,405,355,kind)
+    else:placeholder(c,sku,515,185,405,355,kind)
+    plano=asset_path(sku,'planos')
+    if plano:
+        try:fit_image(c,plano,705,87,190,135)
+        except Exception:pass
+    footer(c,sku)
+    c.showPage()
+    # Segunda página solo cuando el Excel incluya datos técnicos adicionales no vacíos.
+    used={col for _,col in CAMPOS[kind]}
+    excluded={'#','Inactivo','CDP','ECOMMERCE','BIM','MANTENCIÓN','MANUAL INSTALACIÓN','GARANTÍA','GARANTÍA TEXTO','FICHA TECNICA','Des FICHA TECNICA','Des BIM','Des MANTENCION','Des MANUAL_INSTALACION','Des GARANTIA','Link Instalación','Link Mantención','Link Garantía','Link FichaTecnica','Link Cátalogo','Productos Complementarios','Unnamed: 93'}
+    extras=[]
+    for key,val in p.items():
+        if key in used or key in excluded or key.startswith('Link ') or key.startswith('Des ') or key in ('Número de artículo','Descripción del artículo','NOMBRE ECOMMERCE','DESCRIPCIÓN ECOMMERCE','DESCRIPCION LARGA ECOMMERCE','Marca','Rubro','Familia Item'):continue
+        v=clean(val)
+        if v and len(v)<180: extras.append((key.upper(),v))
+    if extras:
+        draw_header(c,p,kind,'Información técnica complementaria')
+        draw_table(c,extras,38,H-195,W-76,bottom=80)
+        footer(c,sku,2)
+        c.showPage()
+    c.save()
+    return out.getvalue()
