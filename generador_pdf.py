@@ -305,47 +305,91 @@ def placeholder(c, sku, x, y, w, h, category):
     )
 
 
+
 def draw_table(c, fields, x, top, w, bottom=94):
     yy = top
-    left = 155
+
+    # Columna izquierda más ancha
+    left = min(285, w * 0.46)
 
     for label, value in fields:
         if not value:
             continue
 
-        size = 9.1
-        value_width = w - left - 15
+        label_width = left - 16
+        value_width = w - left - 16
 
-        text_len = stringWidth(
-            value, FONT, size
+        label_size = 8.5
+        value_size = 9.1
+
+        # Calcular cuántas líneas necesita cada texto
+        def contar_lineas(texto, font, size, width):
+            palabras = str(texto).split()
+            lineas = 1
+            actual = ""
+
+            for palabra in palabras:
+                prueba = (actual + " " + palabra).strip()
+
+                if stringWidth(prueba, font, size) <= width:
+                    actual = prueba
+                else:
+                    lineas += 1
+                    actual = palabra
+
+            return lineas
+
+        lineas_label = contar_lineas(
+            label, BOLD, label_size, label_width
         )
 
-        rowh = 26 if text_len <= value_width else 39
+        lineas_valor = contar_lineas(
+            value, FONT, value_size, value_width
+        )
+
+        # Altura dinámica según contenido
+        rowh = max(
+            27,
+            max(
+                lineas_label * (label_size + 5),
+                lineas_valor * (value_size + 5)
+            ) + 12
+        )
 
         if yy - rowh < bottom:
             return False
 
         draw_text(
             c, label,
-            x+6, yy-15,
-            left-10, 8.5,
-            True, max_lines=2
+            x + 7, yy - 15,
+            label_width,
+            label_size,
+            True,
+            max_lines=lineas_label
         )
 
         draw_text(
             c, value,
-            x+left, yy-15,
-            value_width, size,
-            max_lines=2
+            x + left, yy - 15,
+            value_width,
+            value_size,
+            max_lines=lineas_valor
         )
 
         c.setStrokeColor(LINE)
         c.setLineWidth(0.45)
-        c.line(x, yy-rowh, x+w, yy-rowh)
+
+        c.line(
+            x,
+            yy - rowh,
+            x + w,
+            yy - rowh
+        )
 
         yy -= rowh
 
     return True
+
 
 
 def draw_header(c, p, kind, title=""):
@@ -387,7 +431,7 @@ def footer(c, sku, page=1):
 
     draw_text(
         c,
-        f"SKU: {sku} | Ficha generada automáticamente desde Excel | Página {page}",
+        f"SKU: {sku} | Página {page}",
         38, 29,
         W-260, 8,
         False, GREY
