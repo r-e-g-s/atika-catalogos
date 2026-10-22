@@ -1,451 +1,84 @@
+from pathlib import Path
+from io import BytesIO
+import zipfile
 import streamlit as st
 import pandas as pd
-import requests
-import zipfile
-import os
-
-from io import BytesIO
-from PIL import Image
-
-from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import A4
-from reportlab.lib.utils import ImageReader
-from reportlab.lib.colors import HexColor
-
-# ==================================================
-# CONFIG
-# ==================================================
-
-st.set_page_config(
-    page_title="ATIKA Catálogos",
-    page_icon="🏠",
-    layout="wide"
-)
-
-# ==================================================
-# ESTILO
-# ==================================================
-
-st.markdown("""
-<style>
-
-.stButton > button {
-    background-color:#d71920;
-    color:white;
-    border-radius:8px;
-    border:none;
-    font-weight:bold;
-}
-
-h1 {
-    color:#222222;
-}
-
-</style>
-""", unsafe_allow_html=True)
-
-# ==================================================
-# LOGO
-# ==================================================
-
-if os.path.exists("logo_atika.png"):
-    st.image(
-        "logo_atika.png",
-        width=320
-    )
-
-st.title("Catálogos Comerciales")
-
-st.write(
-    "Seleccione uno o más productos para generar fichas PDF."
-)
-
-# ==================================================
-# PRODUCTOS DEMO
-# ==================================================
-
-productos = [
-
-    {
-        "SKU": "WPC-16200-WALNUT",
-        "Nombre": "Wall Panel 16200 Walnut",
-        "Marca": "ATIKA",
-        "Categoria": "Revestimiento Decorativo",
-        "Descripcion": "Panel WPC decorativo para muros y cielos con apariencia tipo madera natural.",
-        "Material": "WPC",
-        "Color": "Walnut",
-        "Formato": "2900 x 160 mm",
-        "Uso": "Muros y cielos",
-        "Imagen": "https://atika.vtexassets.com/arquivos/ids/169616-800-800"
-    },
-
-    {
-        "SKU": "PORC-001",
-        "Nombre": "Porcelanato Eras Ivory Mate",
-        "Marca": "ATIKA",
-        "Categoria": "Porcelanato",
-        "Descripcion": "Porcelanato rectificado acabado mate para uso residencial y comercial.",
-        "Material": "Porcelanato",
-        "Color": "Ivory",
-        "Formato": "60 x 120 cm",
-        "Uso": "Piso y muro",
-        "Imagen": "https://picsum.photos/900/900?1"
-    },
-
-    {
-        "SKU": "SPC-001",
-        "Nombre": "Piso SPC Aston Oak",
-        "Marca": "ATIKA",
-        "Categoria": "SPC",
-        "Descripcion": "Piso SPC resistente al agua ideal para espacios interiores.",
-        "Material": "SPC",
-        "Color": "Oak",
-        "Formato": "1220 x 180 mm",
-        "Uso": "Interior",
-        "Imagen": "https://picsum.photos/900/900?2"
-    },
-
-    {
-        "SKU": "GRIF-001",
-        "Nombre": "Grifería Negra Mate",
-        "Marca": "ATIKA",
-        "Categoria": "Grifería",
-        "Descripcion": "Grifería premium con acabado negro mate de diseño contemporáneo.",
-        "Material": "Latón",
-        "Color": "Negro",
-        "Formato": "-",
-        "Uso": "Baño",
-        "Imagen": "https://picsum.photos/900/900?3"
-    }
-
-]
-
-df = pd.DataFrame(productos)
-
-# ==================================================
-# PDF PREMIUM
-# ==================================================
-
-def crear_pdf(producto):
-
-    archivo_pdf = f"{producto['SKU']}.pdf"
-
-    c = canvas.Canvas(
-        archivo_pdf,
-        pagesize=A4
-    )
-
-    ancho, alto = A4
-
-    ROJO = HexColor("#D71920")
-    GRIS = HexColor("#777777")
-    FONDO = HexColor("#F4F4F4")
-
-    # -------------------------
-    # FONDO
-    # -------------------------
-
-    c.setFillColorRGB(1, 1, 1)
-
-    c.rect(
-        0,
-        0,
-        ancho,
-        alto,
-        fill=1,
-        stroke=0
-    )
-
-    # -------------------------
-    # FRANJA ROJA
-    # -------------------------
-
-    c.setFillColor(ROJO)
-
-    c.rect(
-        0,
-        alto - 10,
-        ancho,
-        10,
-        fill=1,
-        stroke=0
-    )
-
-    # -------------------------
-    # LOGO
-    # -------------------------
-
-    if os.path.exists("logo_atika.png"):
-
-        c.drawImage(
-            "logo_atika.png",
-            40,
-            alto - 95,
-            width=180,
-            height=55,
-            preserveAspectRatio=True,
-            mask='auto'
-        )
-
-    # -------------------------
-    # TITULO
-    # -------------------------
-
-    c.setFillColor(HexColor("#222222"))
-
-    c.setFont(
-        "Helvetica-Bold",
-        22
-    )
-
-    c.drawString(
-        40,
-        alto - 130,
-        producto["Nombre"]
-    )
-
-    c.setFont(
-        "Helvetica",
-        12
-    )
-
-    c.setFillColor(GRIS)
-
-    c.drawString(
-        40,
-        alto - 150,
-        producto["Categoria"]
-    )
-
-    # -------------------------
-    # FOTO PRINCIPAL
-    # -------------------------
-
-    try:
-
-        r = requests.get(
-            producto["Imagen"],
-            timeout=20
-        )
-
-        img = Image.open(
-            BytesIO(r.content)
-        )
-
-        c.drawImage(
-            ImageReader(img),
-            40,
-            300,
-            width=520,
-            height=300
-        )
-
-    except:
-
-        c.drawString(
-            40,
-            450,
-            "Imagen no disponible"
-        )
-
-    # -------------------------
-    # DESCRIPCION
-    # -------------------------
-
-    c.setFillColor(HexColor("#222222"))
-
-    c.setFont(
-        "Helvetica-Bold",
-        13
-    )
-
-    c.drawString(
-        40,
-        270,
-        "DESCRIPCIÓN"
-    )
-
-    c.setFont(
-        "Helvetica",
-        10
-    )
-
-    c.drawString(
-        40,
-        250,
-        producto["Descripcion"]
-    )
-
-    # -------------------------
-    # ESPECIFICACIONES
-    # -------------------------
-
-    c.setFillColor(FONDO)
-
-    c.roundRect(
-        40,
-        70,
-        520,
-        140,
-        8,
-        fill=1,
-        stroke=0
-    )
-
-    c.setFillColor(HexColor("#222222"))
-
-    c.setFont(
-        "Helvetica-Bold",
-        13
-    )
-
-    c.drawString(
-        55,
-        185,
-        "ESPECIFICACIONES"
-    )
-
-    datos = [
-
-        ("SKU", producto["SKU"]),
-        ("Marca", producto["Marca"]),
-        ("Material", producto["Material"]),
-        ("Color", producto["Color"]),
-        ("Formato", producto["Formato"]),
-        ("Uso", producto["Uso"])
-
-    ]
-
-    y = 160
-
-    c.setFont(
-        "Helvetica",
-        10
-    )
-
-    for nombre, valor in datos:
-
-        c.drawString(
-            60,
-            y,
-            f"{nombre}:"
-        )
-
-        c.drawString(
-            180,
-            y,
-            str(valor)
-        )
-
-        y -= 20
-
-    # -------------------------
-    # FOOTER
-    # -------------------------
-
-    c.setFillColor(ROJO)
-
-    c.rect(
-        0,
-        0,
-        ancho,
-        20,
-        fill=1,
-        stroke=0
-    )
-
-    c.save()
-
-    return archivo_pdf
-
-# ==================================================
-# SELECCION
-# ==================================================
-
-seleccionados = st.multiselect(
-    "Seleccione productos",
-    df["Nombre"]
-)
-
-if st.button("Generar Catálogos PDF"):
-
-    if len(seleccionados) == 0:
-
-        st.warning(
-            "Seleccione al menos un producto."
-        )
-
-    else:
-
-        pdfs = []
-
-        for nombre in seleccionados:
-
-            producto = df[
-                df["Nombre"] == nombre
-            ].iloc[0]
-
-            archivo = crear_pdf(
-                producto
-            )
-
-            pdfs.append(
-                archivo
-            )
-
-        zip_name = "Catalogos_ATIKA.zip"
-
-        with zipfile.ZipFile(
-            zip_name,
-            "w"
-        ) as z:
-
-            for pdf in pdfs:
-
-                z.write(
-                    pdf,
-                    arcname=os.path.basename(pdf)
-                )
-
-        with open(
-            zip_name,
-            "rb"
-        ) as f:
-
-            st.download_button(
-                "📥 Descargar ZIP",
-                data=f,
-                file_name=zip_name,
-                mime="application/zip"
-            )
-
-# ==================================================
-# GALERIA
-# ==================================================
-
+from generador_pdf import crear_pdf, REFERENCIAS, titulo_producto
+
+BASE=Path(__file__).resolve().parent
+st.set_page_config(page_title='ATIKA | Fichas técnicas',layout='wide',page_icon='📄')
+st.markdown('''<style>h1,h2,h3{color:#222}.stButton>button[kind="primary"]{background:#D71920;border-color:#D71920}</style>''',unsafe_allow_html=True)
+logo=BASE/'assets'/'logo_atika.png'
+if logo.exists():st.image(str(logo),width=220)
+st.title('Fichas técnicas ATIKA')
+st.caption('Selecciona productos por SKU, marca o categoría. Los cinco productos de referencia conservan su PDF original.')
+
+@st.cache_data(show_spinner='Cargando catálogo…')
+def cargar_catalogo():
+ path=BASE/'data'/'productos.xlsx'
+ df=pd.read_excel(path,sheet_name='bbdd',dtype={'Número de artículo':str},engine='openpyxl')
+ df.columns=df.columns.astype(str).str.strip()
+ df=df.dropna(subset=['Número de artículo']).copy()
+ df['Número de artículo']=df['Número de artículo'].astype(str).str.strip()
+ df=df.drop_duplicates(subset=['Número de artículo'],keep='first')
+ df['Nombre']=df.apply(titulo_producto,axis=1)
+ df['Marca visible']=df.get('Des MARCA',pd.Series(index=df.index,dtype='object')).fillna('Sin marca').astype(str)
+ df['Categoría visible']=df.get('Familia Item',pd.Series(index=df.index,dtype='object')).fillna('Sin categoría').astype(str)
+ df['Referencia']=df['Número de artículo'].isin(REFERENCIAS)
+ return df
+
+try: df=cargar_catalogo()
+except Exception as e:
+ st.error(f'No se pudo leer data/productos.xlsx: {e}');st.stop()
+
+modo=st.radio('Catálogo',['Prototipo · 5 referencias','Catálogo completo'],horizontal=True)
+if modo.startswith('Prototipo'): df=df[df['Referencia']].copy()
+c1,c2,c3=st.columns([2,1,1])
+with c1: busqueda=st.text_input('Buscar SKU o producto',placeholder='Ej.: 39467000, Dolomite, grifo')
+with c2:
+ marcas=['Todas']+sorted(df['Marca visible'].unique().tolist())
+ marca=st.selectbox('Marca',marcas)
+with c3:
+ categorias=['Todas']+sorted(df['Categoría visible'].unique().tolist())
+ categoria=st.selectbox('Categoría',categorias)
+if marca!='Todas':df=df[df['Marca visible']==marca]
+if categoria!='Todas':df=df[df['Categoría visible']==categoria]
+if busqueda:
+ q=busqueda.strip().casefold()
+ df=df[df[['Número de artículo','Nombre','Marca visible','Categoría visible']].fillna('').astype(str).apply(lambda col:col.str.casefold().str.contains(q,regex=False)).any(axis=1)]
+st.caption(f'{len(df):,} productos encontrados'.replace(',','.'))
+if df.empty:st.info('No hay resultados para los filtros seleccionados.');st.stop()
+
+# Selector paginado para no saturar la interfaz con 15 mil productos.
+if modo.startswith('Prototipo'):
+ vista=df
+else:
+ pagina=st.number_input('Página',min_value=1,max_value=max(1,(len(df)+49)//50),value=1)
+ vista=df.iloc[(pagina-1)*50:pagina*50]
+
+st.dataframe(vista[['Número de artículo','Nombre','Marca visible','Categoría visible','Referencia']].rename(columns={'Número de artículo':'SKU','Marca visible':'Marca','Categoría visible':'Categoría','Referencia':'PDF original'}),hide_index=True,use_container_width=True)
+opciones=vista['Número de artículo'].tolist()
+seleccion=st.multiselect('Selecciona uno o más SKU de los resultados visibles',options=opciones,format_func=lambda s:f'{s} — {vista.loc[vista["Número de artículo"]==s,"Nombre"].iloc[0]}')
+if st.button('Seleccionar todos los productos visibles'):
+ st.session_state['seleccion_todos']=opciones
+if st.session_state.get('seleccion_todos'):
+ seleccion=list(dict.fromkeys(seleccion+ [x for x in st.session_state['seleccion_todos'] if x in opciones]))
+ st.caption(f'{len(seleccion)} SKU preparados. Puedes cambiar filtros para reiniciar la selección.')
+
+if seleccion:
+ if len(seleccion)==1:
+  p=df[df['Número de artículo']==seleccion[0]].iloc[0].to_dict()
+  contenido,original=crear_pdf(p)
+  st.download_button('📥 Descargar PDF',data=contenido,file_name=f'{seleccion[0].replace("/","-")}-FT.pdf',mime='application/pdf',type='primary')
+  st.caption('PDF original ATIKA' if original else 'PDF generado a partir de las especificaciones del Excel')
+ else:
+  memoria=BytesIO()
+  with zipfile.ZipFile(memoria,'w',compression=zipfile.ZIP_DEFLATED) as z:
+   for sku in seleccion:
+    p=df[df['Número de artículo']==sku].iloc[0].to_dict()
+    contenido,_=crear_pdf(p)
+    z.writestr(f'{sku.replace("/","-")}-FT.pdf',contenido)
+  st.download_button(f'📦 Descargar ZIP ({len(seleccion)} PDF)',data=memoria.getvalue(),file_name='Fichas_ATIKA.zip',mime='application/zip',type='primary')
+else: st.info('Selecciona un SKU para descargar su ficha o varios para descargar un ZIP.')
 st.divider()
-
-st.subheader("Productos Disponibles")
-
-cols = st.columns(4)
-
-for i, (_, row) in enumerate(df.iterrows()):
-
-    with cols[i % 4]:
-
-        st.image(
-            row["Imagen"],
-            use_container_width=True
-        )
-
-        st.markdown(
-            f"### {row['Nombre']}"
-        )
-
-        st.caption(
-            row["Categoria"]
-        )
-
-        st.write(
-            row["Descripcion"]
-        )
+st.caption('Las imágenes y diagramas de productos nuevos deben ser proporcionados o aprobados por ATIKA. No se generan especificaciones no contenidas en la fuente.')
