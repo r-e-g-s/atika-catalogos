@@ -777,14 +777,27 @@ def crear_pdf_general(p):
 # ==================================================
 
 def draw_porcelanato_page2(c, p):
-    
+
+    draw_header(
+        c,
+        p,
+        "porcelanatos",
+        "Información técnica"
+    )
+
     draw_text(
         c,
-        "PAGINA 2 PORCELANATO",
+        "Página ISO en construcción",
         100,
         500,
         400,
         30
+    )
+
+    footer(
+        c,
+        clean(p.get("Número de artículo")),
+        2
     )
 
 
