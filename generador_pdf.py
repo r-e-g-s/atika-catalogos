@@ -684,9 +684,16 @@ def crear_pdf_general(p):
 
     c.showPage()
 
-    used = {
-        col for _, col in CAMPOS[kind]
-    }
+    draw_text(
+        c,
+        "SEGUNDA PAGINA TEST",
+        100,
+        500,
+        400,
+        30
+    )
+    c.save()
+    return out.getvalue()
 
     excluded = {
         "#",
