@@ -465,7 +465,7 @@ def draw_header(c, p, kind, title=""):
 
     c.setStrokeColor(RED)
     c.setLineWidth(4)
-    c.line(38, H-151, 106, H-151)
+    c.line(38, H-130, 106, H-130)
 
 
 
@@ -858,7 +858,7 @@ def draw_porcelanato_page2(c, p):
         c,
         p,
         "porcelanatos",
-        "Información técnica"
+        "Información Técnica"
     )
 
     draw_iso_table(c)
