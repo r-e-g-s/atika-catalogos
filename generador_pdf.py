@@ -763,6 +763,9 @@ def crear_pdf_general(p):
         c.showPage()
         
     # NUEVA PÁGINA 2 PARA PORCELANATOS
+    def draw_porcelanato_page2(c, p):
+        pass
+        
     if kind == "porcelanatos":
         draw_porcelanato_page2(c, p)
         c.showPage()
