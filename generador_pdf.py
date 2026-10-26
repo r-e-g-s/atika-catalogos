@@ -795,16 +795,10 @@ def draw_porcelanato_page2(c, p):
     draw_text(
         c,
         "Página ISO en construcción",
-        40,
-        560,
+        100,
         500,
-        16
-    )
-
-    footer(
-        c,
-        clean(p.get("Número de artículo")),
-        2
+        400,
+        30
     )
 
 def crear_pdf_porcelanato(p):
