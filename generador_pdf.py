@@ -776,29 +776,79 @@ def crear_pdf_general(p):
 # PDF PORCELANATOS
 # ==================================================
 
-def draw_porcelanato_page2(c, p):
+def draw_iso_table(c):
 
-    draw_header(
-        c,
-        p,
-        "porcelanatos",
-        "Información técnica"
-    )
+    rows = [
+        ["Descripción de ensayo", "Método estándar", "Requisito estándar", "Especificación producto"],
+        ["Calidad superficial", "BS EN ISO 10545-2", "Mín. 95% sin defectos visibles", "Mín. 97% sin defectos visibles"],
+        ["Longitud y ancho", "BS EN ISO 10545-2", "±0,6%", "±0,15%"],
+        ["Espesor", "BS EN ISO 10545-2", "±5%", "±2%"],
+        ["Rectitud de lados", "BS EN ISO 10545-2", "±0,5%", "±0,15%"],
+        ["Rectangularidad", "BS EN ISO 10545-2", "±0,5%", "±0,15%"],
+        ["Planitud central", "BS EN ISO 10545-2", "±0,5%", "±0,15%"],
+        ["Curvatura de borde", "BS EN ISO 10545-2", "±0,5%", "±0,15%"],
+        ["Alabeo", "BS EN ISO 10545-2", "±0,5%", "±0,15%"],
+        ["Absorción de agua", "BS EN ISO 10545-3", "≤0,5%", "≤0,3%"],
+        ["Resistencia a la rotura", "BS EN ISO 10545-4", "≥1300 N", "≥2000 N"],
+        ["Módulo de ruptura", "BS EN ISO 10545-4", "≥35 N/mm²", "≥40 N/mm²"],
+        ["Resistencia a abrasión superficial", "BS EN ISO 10545-7", "Fabricante declara clase", "PEI Clase 2~5"],
+        ["Coef. expansión térmica lineal", "BS EN ISO 10545-8", "Método disponible", "≤7×10⁻⁶ /°C"],
+        ["Resistencia al choque térmico", "BS EN ISO 10545-9", "Método disponible", "Sin defectos visibles"],
+        ["Resistencia al cuarteo", "BS EN ISO 10545-11", "Requerido", "Sin cuarteo"],
+        ["Resistencia a heladas", "BS EN ISO 10545-12", "Requerido", "Sin daño visible"],
+        ["Resistencia a químicos domésticos y sales piscina", "BS EN ISO 10545-13", "Mínimo clase GLA", "Sin defecto visible"],
+        ["Resistencia a bajas concentraciones", "BS EN ISO 10545-13", "Fabricante declara clasificación", "Clase GLA"],
+        ["Resistencia a manchas", "BS EN ISO 10545-14", "Mínimo clase 3", "Mínimo clase 4"],
+        ["Resistencia al deslizamiento (rampa)", "DIN 51130", "-", "R9"]
+    ]
 
-    draw_text(
-        c,
-        "Página ISO en construcción",
-        100,
-        500,
-        400,
-        30
-    )
+    x = 20
+    y = 540
 
-    footer(
-        c,
-        clean(p.get("Número de artículo")),
-        2
-    )
+    col_widths = [300, 175, 210, 210]
+    row_height = 22
+
+    c.setStrokeColor(HexColor("#6E6E6E"))
+    c.setLineWidth(0.4)
+
+    current_y = y
+
+    for r, row in enumerate(rows):
+
+        h = row_height
+
+        if len(row[0]) > 40:
+            h = 42
+
+        current_x = x
+
+        for col_num, text in enumerate(row):
+
+            w = col_widths[col_num]
+
+            c.rect(
+                current_x,
+                current_y - h,
+                w,
+                h,
+                stroke=1,
+                fill=0
+            )
+
+            c.setFont(
+                BOLD if r == 0 else FONT,
+                8
+            )
+
+            c.drawString(
+                current_x + 4,
+                current_y - 14,
+                str(text)
+            )
+
+            current_x += w
+
+        current_y -= h
 
 
 def crear_pdf_porcelanato(p):
