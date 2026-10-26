@@ -851,6 +851,23 @@ def draw_iso_table(c):
         current_y -= h
 
 
+def draw_porcelanato_page2(c, p):
+
+    draw_header(
+        c,
+        p,
+        "porcelanatos",
+        "Información técnica"
+    )
+
+    draw_iso_table(c)
+
+    footer(
+        c,
+        clean(p.get("Número de artículo")),
+        2
+    )
+
 def crear_pdf_porcelanato(p):
 
     # Temporalmente reutiliza la lógica actual
