@@ -746,7 +746,7 @@ def crear_pdf_general(p):
             c,
             p,
             kind,
-            "Información técnica complementaria"
+            "Información Técnica complementaria"
         )
 
         draw_table(
