@@ -800,7 +800,7 @@ def crear_pdf_porcelanato(p):
     # Temporalmente reutiliza la lógica actual
     # hasta construir la plantilla oficial.
 
-    return pdf_bytes
+    return crear_pdf_general(p)
 
 
 # ==================================================
