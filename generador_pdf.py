@@ -740,7 +740,7 @@ def crear_pdf_general(p):
         if v and len(v) < 180:
             extras.append((key.upper(), v))
 
-    if extras:
+    if extras and kind != "porcelanatos":
 
         draw_header(
             c,
@@ -771,12 +771,36 @@ def crear_pdf_general(p):
 # PDF PORCELANATOS
 # ==================================================
 
+def draw_porcelanato_page2(c, p):
+
+    draw_header(
+        c,
+        p,
+        "porcelanatos",
+        "Información técnica"
+    )
+
+    draw_text(
+        c,
+        "Página ISO en construcción",
+        40,
+        560,
+        500,
+        16
+    )
+
+    footer(
+        c,
+        clean(p.get("Número de artículo")),
+        2
+    )
+
 def crear_pdf_porcelanato(p):
 
     # Temporalmente reutiliza la lógica actual
     # hasta construir la plantilla oficial.
 
-    return crear_pdf_general(p)
+    return pdf_bytes
 
 
 # ==================================================
