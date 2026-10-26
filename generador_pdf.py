@@ -155,7 +155,7 @@ def clean(v):
         )
     )
     # quitar prefijos heredados del Excel
-    s = re.sub(r"^[YN]\s*-\s*", "", s)
+    s = re.sub(r"^\s*[YN]\s*-\s*", "", s, flags=re.IGNORECASE)
 
     return s
 
