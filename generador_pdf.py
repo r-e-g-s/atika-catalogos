@@ -761,7 +761,12 @@ def crear_pdf_general(p):
         footer(c, sku, 2)
 
         c.showPage()
-
+        
+    # NUEVA PÁGINA 2 PARA PORCELANATOS
+    if kind == "porcelanatos":
+        draw_porcelanato_page2(c, p)
+        c.showPage()
+ 
     c.save()
 
     return out.getvalue()
