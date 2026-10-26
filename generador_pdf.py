@@ -154,10 +154,10 @@ def clean(v):
             "Cc", "Cf"
         )
     )
+    # quitar prefijos heredados del Excel
+    s = re.sub(r"^[YN]\s*-\s*", "", s)
 
     return s
-
-
 
 def categoria(p):
     txt = " ".join(
@@ -532,9 +532,16 @@ def draw_porcelanato_icons(c, p):
         p.get("Des ANTIDESLIZANTE")
     )
 
-    pei = clean(
-        p.get("PEI")
+    trafico = clean(
+        p.get("Des TRAFICO")
     )
+
+    m = re.search(
+        r"(PEI\s*\d+)",
+        trafico
+    )
+
+    pei = m.group(1) if m else trafico
 
     draw_text(
         c,
