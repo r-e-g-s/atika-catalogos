@@ -521,14 +521,16 @@ def footer(c, sku, page=1):
 
 
 # ==================================================
-# GENERADOR PRINCIPAL
+# PDF GENERAL (COMPORTAMIENTO ACTUAL)
 # ==================================================
 
-def crear_pdf(p):
+def crear_pdf_general(p):
+
     sku = clean(p.get("Número de artículo"))
     kind = categoria(p)
 
     out = BytesIO()
+
     c = canvas.Canvas(
         out,
         pagesize=(W, H),
@@ -545,7 +547,7 @@ def crear_pdf(p):
 
     draw_text(
         c, desc,
-        38, H-193,
+        38, H - 193,
         440, 10.5,
         False, GREY, 3
     )
@@ -562,56 +564,82 @@ def crear_pdf(p):
     ]
 
     draw_table(
-        c, fields,
-        38, H-255, 440
+        c,
+        fields,
+        38,
+        H - 255,
+        440
     )
 
-    # Fotografía asociada al SKU
     img = asset_path(sku, "productos")
 
     if img:
         try:
             fit_image(
-                c, img,
-                515, 185, 405, 355
+                c,
+                img,
+                515,
+                185,
+                405,
+                355
             )
         except Exception:
             placeholder(
-                c, sku,
-                515, 185, 405, 355, kind
+                c,
+                sku,
+                515,
+                185,
+                405,
+                355,
+                kind
             )
     else:
         placeholder(
-            c, sku,
-            515, 185, 405, 355, kind
+            c,
+            sku,
+            515,
+            185,
+            405,
+            355,
+            kind
         )
 
-    # Plano técnico asociado al SKU
     plano = asset_path(sku, "planos")
 
     if plano:
         try:
             fit_image(
-                c, plano,
-                705, 87, 190, 135
+                c,
+                plano,
+                705,
+                87,
+                190,
+                135
             )
         except Exception:
             pass
 
     footer(c, sku)
+
     c.showPage()
 
-    # Segunda página: información complementaria
     used = {
         col for _, col in CAMPOS[kind]
     }
 
     excluded = {
-        "#", "Inactivo", "CDP", "ECOMMERCE",
-        "BIM", "MANTENCIÓN",
-        "MANUAL INSTALACIÓN", "GARANTÍA",
-        "GARANTÍA TEXTO", "FICHA TECNICA",
-        "Des FICHA TECNICA", "Des BIM",
+        "#",
+        "Inactivo",
+        "CDP",
+        "ECOMMERCE",
+        "BIM",
+        "MANTENCIÓN",
+        "MANUAL INSTALACIÓN",
+        "GARANTÍA",
+        "GARANTÍA TEXTO",
+        "FICHA TECNICA",
+        "Des FICHA TECNICA",
+        "Des BIM",
         "Des MANTENCION",
         "Des MANUAL_INSTALACION",
         "Des GARANTIA",
@@ -627,6 +655,7 @@ def crear_pdf(p):
     extras = []
 
     for key, val in p.items():
+
         if (
             key in used
             or key in excluded
@@ -638,7 +667,9 @@ def crear_pdf(p):
                 "NOMBRE ECOMMERCE",
                 "DESCRIPCIÓN ECOMMERCE",
                 "DESCRIPCION LARGA ECOMMERCE",
-                "Marca", "Rubro", "Familia Item",
+                "Marca",
+                "Rubro",
+                "Familia Item",
             )
         ):
             continue
@@ -649,22 +680,84 @@ def crear_pdf(p):
             extras.append((key.upper(), v))
 
     if extras:
+
         draw_header(
-            c, p, kind,
+            c,
+            p,
+            kind,
             "Información técnica complementaria"
         )
 
         draw_table(
-            c, extras,
-            38, H-195,
-            W-76,
+            c,
+            extras,
+            38,
+            H - 195,
+            W - 76,
             bottom=80
         )
 
         footer(c, sku, 2)
+
         c.showPage()
 
     c.save()
 
     return out.getvalue()
+
+
+# ==================================================
+# PDF PORCELANATOS
+# ==================================================
+
+def crear_pdf_porcelanato(p):
+
+    # Por ahora usa el comportamiento existente.
+    # Luego iremos reemplazándolo por la plantilla
+    # oficial de dos páginas.
+
+    return crear_pdf_general(p)
+
+
+# ==================================================
+# PDF GRIFERÍA
+# ==================================================
+
+def crear_pdf_griferia(p):
+
+    # Por ahora usa el comportamiento existente.
+    # Después se hará la plantilla Grohe/FV/etc.
+
+    return crear_pdf_general(p)
+
+
+# ==================================================
+# PDF SANITARIOS
+# ==================================================
+
+def crear_pdf_sanitario(p):
+
+    # Por ahora usa el comportamiento existente.
+
+    return crear_pdf_general(p)
+
+
+# ==================================================
+# ENTRADA PRINCIPAL
+# ==================================================
+
+def crear_pdf(p):
+
+    kind = categoria(p)
+
+    if kind == "porcelanatos":
+        return crear_pdf_porcelanato(p)
+
+    if kind == "griferia":
+        return crear_pdf_griferia(p)
+
+    if kind == "sanitarios":
+        return crear_pdf_sanitario(p)
+
+    return crear_pdf_general(p)
 
