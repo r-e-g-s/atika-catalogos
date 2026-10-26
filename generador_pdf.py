@@ -854,9 +854,6 @@ def draw_iso_table(c):
 
 def draw_porcelanato_page2(c, p):
 
-    c.setFont("Helvetica", 20)
-    c.drawString(100, 600, "HEADER OK")
-
     draw_header(
         c,
         p,
@@ -864,11 +861,7 @@ def draw_porcelanato_page2(c, p):
         "Información técnica"
     )
 
-    c.drawString(100, 550, "TABLA OK")
-
     draw_iso_table(c)
-
-    c.drawString(100, 500, "FOOTER OK")
 
     footer(
         c,
