@@ -777,10 +777,16 @@ def crear_pdf_general(p):
 # ==================================================
 
 def draw_porcelanato_page2(c, p):
+    
+    draw_text(
+        c,
+        "PAGINA 2 PORCELANATO",
+        100,
+        500,
+        400,
+        30
+    )
 
-    if kind == "porcelanatos":
-        draw_porcelanato_page2(c, p)
-        c.showPage()
 
 def crear_pdf_porcelanato(p):
 
