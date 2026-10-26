@@ -684,17 +684,10 @@ def crear_pdf_general(p):
 
     c.showPage()
 
-    draw_text(
-        c,
-        "SEGUNDA PAGINA TEST",
-        100,
-        500,
-        400,
-        30
-    )
-    c.save()
-    return out.getvalue()
-
+    used = {
+    col for _, col in CAMPOS[kind]
+    }
+    
     excluded = {
         "#",
         "Inactivo",
@@ -785,21 +778,9 @@ def crear_pdf_general(p):
 
 def draw_porcelanato_page2(c, p):
 
-    draw_header(
-        c,
-        p,
-        "porcelanatos",
-        "Información técnica"
-    )
-
-    draw_text(
-        c,
-        "Página ISO en construcción",
-        100,
-        500,
-        400,
-        30
-    )
+    if kind == "porcelanatos":
+        draw_porcelanato_page2(c, p)
+        c.showPage()
 
 def crear_pdf_porcelanato(p):
 
