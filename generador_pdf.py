@@ -85,20 +85,17 @@ CAMPOS = {
         ("ZONA DE APLICACIÓN", "Des ZONA_APLICACION"),
     ],
     "porcelanatos": [
-        ("CÓDIGO", "Número de artículo"),
-        ("SERIE", "SERIE MKT"),
-        ("MARCA", "Des MARCA"),
-        ("ORIGEN DE LA MARCA", "Des ORIGEN_MARCA"),
-        ("MEDIDA", "Des FORMATO_COMERCIAL"),
-        ("ESPESOR", "ESPESOR"),
-        ("TERMINACIÓN", "Des TERMINACION"),
-        ("USO", "Des USO"),
-        ("ZONA DE APLICACIÓN", "Des ZONA_APLICACION"),
-        ("GRÁFICAS DISTINTAS", "NÚMERO DE GRÁFICAS POR CAJA"),
-        ("ABSORCIÓN DE AGUA", "Porcentaje de Absorción"),
-        ("VARIACIÓN TONAL", "Des VARIACION_TONAL"),
-        ("RECTIFICADO", "Des RECTIFI"),
-        ("ANTIDESLIZANTE", "Des ANTIDESLIZANTE"),
+    ("CÓDIGO", "Número de artículo"),
+    ("SERIE", "SERIE MKT"),
+    ("MARCA", "Des MARCA"),
+    ("ORIGEN DE LA MARCA", "Des ORIGEN_MARCA"),
+    ("MEDIDA", "Des FORMATO_COMERCIAL"),
+    ("ESPESOR", "ESPESOR"),
+    ("TERMINACIÓN", "Des TERMINACION"),
+    ("USO", "Des USO"),
+    ("ZONA DE APLICACIÓN", "Des ZONA_APLICACION"),
+    ("GRÁFICAS DISTINTAS", "NÚMERO DE GRÁFICAS POR CAJA"),
+    ("ABSORCIÓN DE AGUA", "Porcentaje de Absorción"),
     ],
     "griferia": [
         ("CÓDIGO", "Número de artículo"),
@@ -354,6 +351,9 @@ def placeholder(c, sku, x, y, w, h, category):
 
 def draw_table(c, fields, x, top, w, bottom=94):
     yy = top
+    c.setStrokeColor(LINE)
+    c.setLineWidth(0.45)
+    c.line(x, yy, x + w, yy)
 
     # Columna izquierda más ancha
     left = min(285, w * 0.46)
@@ -451,7 +451,7 @@ def draw_header(c, p, kind, title=""):
     draw_text(
         c, labels[kind],
         38, H-52,
-        590, 10, True, GREY
+        590, 9, False, GREY
     )
 
     draw_logo(c)
@@ -518,6 +518,59 @@ def footer(c, sku, page=1):
         GREY
     )
 
+def draw_porcelanato_icons(c, p):
+
+    variacion = clean(
+        p.get("Des VARIACION_TONAL")
+    )
+
+    rectificado = clean(
+        p.get("Des RECTIFI")
+    )
+
+    antideslizante = clean(
+        p.get("Des ANTIDESLIZANTE")
+    )
+
+    pei = clean(
+        p.get("PEI")
+    )
+
+    draw_text(
+        c,
+        f"Variación tonal: {variacion}",
+        40,
+        95,
+        180,
+        9
+    )
+
+    draw_text(
+        c,
+        f"Terminación: {antideslizante}",
+        220,
+        95,
+        180,
+        9
+    )
+
+    draw_text(
+        c,
+        f"Rectificado: {rectificado}",
+        430,
+        95,
+        180,
+        9
+    )
+
+    draw_text(
+        c,
+        f"PEI: {pei}",
+        650,
+        95,
+        180,
+        9
+    )
 
 
 # ==================================================
@@ -618,7 +671,8 @@ def crear_pdf_general(p):
             )
         except Exception:
             pass
-
+    if kind == "porcelanatos":
+        draw_porcelanato_icons(c, p)
     footer(c, sku)
 
     c.showPage()
@@ -712,9 +766,8 @@ def crear_pdf_general(p):
 
 def crear_pdf_porcelanato(p):
 
-    # Por ahora usa el comportamiento existente.
-    # Luego iremos reemplazándolo por la plantilla
-    # oficial de dos páginas.
+    # Temporalmente reutiliza la lógica actual
+    # hasta construir la plantilla oficial.
 
     return crear_pdf_general(p)
 
@@ -760,4 +813,5 @@ def crear_pdf(p):
         return crear_pdf_sanitario(p)
 
     return crear_pdf_general(p)
+
 
